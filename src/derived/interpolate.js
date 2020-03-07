@@ -20,9 +20,8 @@ const interpolateInternalSingleProc = proc(function(
   inE,
   outS,
   outE,
-  easing = t => t
+  progress
 ) {
-  const progress = easing(divide(sub(value, inS), sub(inE, inS)));
   // logic below was made in order to provide a compatibility witn an Animated API
   const resultForNonZeroRange = add(outS, multiply(progress, sub(outE, outS)));
   const result = cond(
@@ -37,14 +36,15 @@ function interpolateInternalSingle(
   value,
   inputRange,
   outputRange,
-  easing,
+  easing = t => t,
   offset
 ) {
   const inS = inputRange[offset];
   const inE = inputRange[offset + 1];
   const outS = outputRange[offset];
   const outE = outputRange[offset + 1];
-  return interpolateInternalSingleProc(value, inS, inE, outS, outE, easing);
+  const progress = easing(divide(sub(value, inS), sub(inE, inS)));
+  return interpolateInternalSingleProc(value, inS, inE, outS, outE, progress);
 }
 
 function interpolateInternal(
