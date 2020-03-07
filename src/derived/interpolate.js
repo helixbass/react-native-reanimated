@@ -19,31 +19,54 @@ const interpolateInternalSingleProc = proc(function(
   inS,
   inE,
   outS,
-  outE
+  outE,
+  easing = t => t
 ) {
-  const progress = divide(sub(value, inS), sub(inE, inS));
+  const progress = easing(divide(sub(value, inS), sub(inE, inS)));
   // logic below was made in order to provide a compatibility witn an Animated API
   const resultForNonZeroRange = add(outS, multiply(progress, sub(outE, outS)));
-  const result = cond(eq(inS, inE), cond(lessOrEq(value, inS), outS, outE), resultForNonZeroRange);
+  const result = cond(
+    eq(inS, inE),
+    cond(lessOrEq(value, inS), outS, outE),
+    resultForNonZeroRange
+  );
   return result;
 });
 
-function interpolateInternalSingle(value, inputRange, outputRange, offset) {
+function interpolateInternalSingle(
+  value,
+  inputRange,
+  outputRange,
+  easing,
+  offset
+) {
   const inS = inputRange[offset];
   const inE = inputRange[offset + 1];
   const outS = outputRange[offset];
   const outE = outputRange[offset + 1];
-  return interpolateInternalSingleProc(value, inS, inE, outS, outE);
+  return interpolateInternalSingleProc(value, inS, inE, outS, outE, easing);
 }
 
-function interpolateInternal(value, inputRange, outputRange, offset = 0) {
+function interpolateInternal(
+  value,
+  inputRange,
+  outputRange,
+  easing,
+  offset = 0
+) {
   if (inputRange.length - offset === 2) {
-    return interpolateInternalSingle(value, inputRange, outputRange, offset);
+    return interpolateInternalSingle(
+      value,
+      inputRange,
+      outputRange,
+      easing,
+      offset
+    );
   }
   return cond(
     lessThan(value, inputRange[offset + 1]),
-    interpolateInternalSingle(value, inputRange, outputRange, offset),
-    interpolateInternal(value, inputRange, outputRange, offset + 1)
+    interpolateInternalSingle(value, inputRange, outputRange, easing, offset),
+    interpolateInternal(value, inputRange, outputRange, easing, offset + 1)
   );
 }
 
@@ -97,6 +120,7 @@ export default function interpolate(value, config) {
     extrapolate = Extrapolate.EXTEND,
     extrapolateLeft,
     extrapolateRight,
+    easing,
   } = config;
   checkMinElements('inputRange', inputRange);
   checkValidNumbers('inputRange', inputRange);
@@ -110,7 +134,7 @@ export default function interpolate(value, config) {
 
   const left = extrapolateLeft || extrapolate;
   const right = extrapolateRight || extrapolate;
-  let output = interpolateInternal(value, inputRange, outputRange);
+  let output = interpolateInternal(value, inputRange, outputRange, easing);
 
   if (left === Extrapolate.EXTEND) {
   } else if (left === Extrapolate.CLAMP) {
